@@ -407,7 +407,12 @@ export default function AddRecordForm() {
                     type="text"
                     label={`${p.name} Quantity`}
                     value={p.quantity === 0 ? "" : p.quantity}
-                    onChange={(e) => handleQuantityInput(e, p.id)}
+                    onChange={(e) =>
+                      handleQuantityInput(
+                        e as React.ChangeEvent<HTMLInputElement>,
+                        p.id,
+                      )
+                    }
                     onKeyDown={handleKeyDown}
                     inputProps={{
                       inputMode: "numeric",
