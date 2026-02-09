@@ -12,7 +12,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type RecordRow = {
   id: string;
@@ -26,7 +26,8 @@ type RecordRow = {
 export default function ReportsPage() {
   const [records, setRecords] = useState<RecordRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [exportType, setExportType] = useState<"pdf" | "excel">("excel");
+
+  const THEME_COLOR = "#F6821F";
 
   useEffect(() => {
     fetch("/api/records")
@@ -54,82 +55,44 @@ export default function ReportsPage() {
       return;
     }
 
-    const res = await fetch(`/api/reports/${exportType}`, {
+    const res = await fetch("/api/reports/excel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         recordIds: selectedIds,
-        type: exportType, // 🔥 REQUIRED
+        type: "excel", // backend still expects this
       }),
     });
 
     if (!res.ok) {
-      alert("Failed to generate report");
+      alert("Failed to generate Excel report");
       return;
     }
 
     const blob = await res.blob();
     const link = document.createElement("a");
     link.href = window.URL.createObjectURL(blob);
-    link.download =
-      exportType === "excel" ? "stock-report.xlsx" : "stock-report.pdf";
+    link.download = "stock-report.xlsx";
     link.click();
   };
-
-  const THEME_COLOR = "#F6821F";
 
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Download Reports
+        Download Excel Report
       </Typography>
 
-      {/* Controls */}
-      <Box display="flex" gap={2} mb={2}>
-        <Button
-          variant={exportType === "excel" ? "contained" : "outlined"}
-          sx={{
-            backgroundColor:
-              exportType === "excel" ? THEME_COLOR : "transparent",
-            color: exportType === "excel" ? "#fff" : THEME_COLOR,
-            borderColor: THEME_COLOR,
-            "&:hover": {
-              backgroundColor: THEME_COLOR,
-              color: "#fff",
-            },
-          }}
-          onClick={() => setExportType("excel")}
-        >
-          Excel
-        </Button>
-
-        <Button
-          variant={exportType === "pdf" ? "contained" : "outlined"}
-          sx={{
-            backgroundColor: exportType === "pdf" ? THEME_COLOR : "transparent",
-            color: exportType === "pdf" ? "#fff" : THEME_COLOR,
-            borderColor: THEME_COLOR,
-            "&:hover": {
-              backgroundColor: THEME_COLOR,
-              color: "#fff",
-            },
-          }}
-          onClick={() => setExportType("pdf")}
-        >
-          PDF
-        </Button>
-
+      {/* Action */}
+      <Box mb={2}>
         <Button
           variant="contained"
           sx={{
             backgroundColor: THEME_COLOR,
-            "&:hover": {
-              backgroundColor: "#e06f14", // slightly darker hover
-            },
+            "&:hover": { backgroundColor: "#e06f14" },
           }}
           onClick={handleDownload}
         >
-          Download Selected
+          Download Selected (Excel)
         </Button>
       </Box>
 
@@ -139,19 +102,17 @@ export default function ReportsPage() {
           <TableRow>
             <TableCell padding="checkbox">
               <Checkbox
-                checked={selectedIds.length === records.length}
+                checked={
+                  selectedIds.length === records.length && records.length > 0
+                }
                 indeterminate={
                   selectedIds.length > 0 && selectedIds.length < records.length
                 }
                 onChange={selectAll}
                 sx={{
                   color: THEME_COLOR,
-                  "&.Mui-checked": {
-                    color: THEME_COLOR,
-                  },
-                  "&.MuiCheckbox-indeterminate": {
-                    color: THEME_COLOR,
-                  },
+                  "&.Mui-checked": { color: THEME_COLOR },
+                  "&.MuiCheckbox-indeterminate": { color: THEME_COLOR },
                 }}
               />
             </TableCell>
@@ -164,28 +125,31 @@ export default function ReportsPage() {
 
         <TableBody>
           {records.map((r) => (
-            <TableRow key={r.id}>
-              <TableCell padding="checkbox">
-                <Checkbox
-                  checked={selectedIds.includes(r.id)}
-                  onChange={() => toggleSelect(r.id)}
-                  sx={{
-                    color: THEME_COLOR,
-                    "&.Mui-checked": {
+            <React.Fragment key={r.id}>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selectedIds.includes(r.id)}
+                    onChange={() => toggleSelect(r.id)}
+                    sx={{
                       color: THEME_COLOR,
-                    },
-                  }}
-                />
-              </TableCell>
-              <TableCell>
-                {r.employee_id} – {r.employee_name}
-              </TableCell>
-              <TableCell>
-                {new Date(r.date_collected).toLocaleDateString("en-GB")}
-              </TableCell>
-              <TableCell>{r.sites.join(", ")}</TableCell>
-              <TableCell>{r.products.length}</TableCell>
-            </TableRow>
+                      "&.Mui-checked": { color: THEME_COLOR },
+                    }}
+                  />
+                </TableCell>
+
+                <TableCell>
+                  {r.employee_id} – {r.employee_name}
+                </TableCell>
+
+                <TableCell>
+                  {new Date(r.date_collected).toLocaleDateString("en-GB")}
+                </TableCell>
+
+                <TableCell>{r.sites.join(", ")}</TableCell>
+                <TableCell>{r.products.length}</TableCell>
+              </TableRow>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>

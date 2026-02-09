@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type ProductRow = {
   name: string;
@@ -181,9 +181,9 @@ export default function RecordsPage() {
           )}
 
           {records.map((r) => (
-            <>
+            <React.Fragment key={r.id}>
               {/* Parent Row */}
-              <TableRow key={r.id}>
+              <TableRow>
                 <TableCell>
                   <IconButton
                     size="small"
@@ -206,11 +206,7 @@ export default function RecordsPage() {
                 <TableCell>{formatDate(r.date_collected)}</TableCell>
 
                 <TableCell>
-                  {Array.isArray(r.sites)
-                    ? r.sites.join(", ")
-                    : typeof r.sites === "string"
-                      ? r.sites
-                      : "-"}
+                  {Array.isArray(r.sites) ? r.sites.join(", ") : "-"}
                 </TableCell>
               </TableRow>
 
@@ -232,9 +228,10 @@ export default function RecordsPage() {
                         </TableHead>
 
                         <TableBody>
-                          {Array.isArray(r.products) ? (
-                            r.products.map((p, idx) => (
-                              <TableRow key={idx}>
+                          {Array.isArray(r.products) &&
+                          r.products.length > 0 ? (
+                            r.products.map((p) => (
+                              <TableRow key={`${r.id}-${p.name}`}>
                                 <TableCell>{p.name}</TableCell>
                                 <TableCell>{p.quantity}</TableCell>
                               </TableRow>
@@ -252,7 +249,7 @@ export default function RecordsPage() {
                   </Collapse>
                 </TableCell>
               </TableRow>
-            </>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>

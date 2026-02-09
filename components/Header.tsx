@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import PersonIcon from "@mui/icons-material/Person";
 
 export default function Header() {
   return (
@@ -34,13 +35,7 @@ export default function Header() {
             minWidth: "0",
           }}
         >
-          <Image
-            src="/WHC_dp.png"
-            alt="Logo"
-            width={50}
-            height={50}
-            priority
-          />
+          <Image src="/WHC_dp.png" alt="Logo" width={50} height={50} priority />
           <h1
             style={{
               margin: 0,
@@ -63,7 +58,7 @@ export default function Header() {
             gap: "12px",
           }}
         >
-          <span style={{ fontSize: "14px", fontWeight: "500" }}>User</span>
+          <span style={{ fontSize: "14px", fontWeight: "500" }}>Thejas</span>
           <div
             style={{
               width: "32px",
@@ -77,7 +72,7 @@ export default function Header() {
               fontWeight: "600",
             }}
           >
-            U
+            <PersonIcon />
           </div>
         </div>
       </div>
