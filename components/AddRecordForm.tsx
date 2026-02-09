@@ -1,7 +1,15 @@
 "use client";
 
-import { TextField, Autocomplete, Chip } from "@mui/material";
-import { useEffect, useState } from "react";
+import {
+  TextField,
+  Autocomplete,
+  Chip,
+  Container,
+  Box,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
+import { useEffect, useState, useCallback } from "react";
 
 type Employee = {
   employee_id: string;
@@ -16,7 +24,7 @@ type Option = {
 type SelectedProduct = {
   id: string;
   name: string;
-  quantity: number;
+  quantity: number | "";
 };
 
 export default function AddRecordForm() {
@@ -33,6 +41,9 @@ export default function AddRecordForm() {
   );
 
   const THEME_COLOR = "#F6821F";
+
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down("sm"));
 
   const textFieldSx = {
     "& .MuiOutlinedInput-root": {
@@ -79,22 +90,71 @@ export default function AddRecordForm() {
       values.map((v) => ({
         id: v.id,
         name: v.name,
-        quantity: selectedProducts.find((p) => p.id === v.id)?.quantity || 1,
+        quantity: selectedProducts.find((p) => p.id === v.id)?.quantity || "",
       })),
     );
+  };
+
+  const handleQuantityChange = useCallback(
+    (productId: string, quantity: number | "") => {
+      setSelectedProducts((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, quantity } : p)),
+      );
+    },
+    [],
+  );
+
+  // Prevent negative numbers and non-digits
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: backspace, delete, tab, escape, enter
+    if (
+      [8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
+      // Allow: Ctrl+A, Command+A
+      (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+      // Allow: home, end, left, right, down, up
+      (e.keyCode >= 35 && e.keyCode <= 40)
+    ) {
+      return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if (
+      (e.shiftKey || e.keyCode < 48 || e.keyCode > 57) &&
+      (e.keyCode < 96 || e.keyCode > 105)
+    ) {
+      e.preventDefault();
+    }
+  };
+
+  // Fixed: Proper typing for text input
+  const handleQuantityInput = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    productId: string,
+  ) => {
+    const value = e.target.value;
+    // Only allow empty, 0-9
+    if (value === "" || /^\d*$/.test(value)) {
+      const numValue = value === "" ? "" : parseInt(value);
+      handleQuantityChange(productId, numValue);
+    }
   };
 
   const handleSubmit = async () => {
     const errors = [];
 
-    if (!employee) {
-      errors.push("Employee ID is required");
-    }
-    if (!dateCollected) {
-      errors.push("Date Collected is required");
-    }
-    if (!productsGivenBy.trim()) {
-      errors.push("Products Given By is required");
+    if (!employee) errors.push("Employee ID is required");
+    if (!dateCollected) errors.push("Date Collected is required");
+    if (!productsGivenBy.trim()) errors.push("Products Given By is required");
+    if (selectedSites.length === 0)
+      errors.push("At least one site is required");
+    if (selectedProducts.length === 0)
+      errors.push("At least one product is required");
+
+    // Validate quantities are numbers
+    const invalidProducts = selectedProducts.filter(
+      (p) => p.quantity === "" || p.quantity === null,
+    );
+    if (invalidProducts.length > 0) {
+      errors.push("Please enter quantities for all products");
     }
 
     if (errors.length > 0) {
@@ -107,13 +167,13 @@ export default function AddRecordForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employee_id: employee?.employee_id,
+          employee_id: employee!.employee_id,
           dateCollected: dateCollected,
           productsGivenBy: productsGivenBy,
           site_ids: selectedSites.map((s) => s.id),
           products: selectedProducts.map((p) => ({
             id: p.id,
-            quantity: p.quantity,
+            quantity: Number(p.quantity), // Convert to number for API
           })),
         }),
       });
@@ -127,6 +187,7 @@ export default function AddRecordForm() {
 
       alert("Record added successfully");
 
+      // Reset form
       setEmployee(null);
       setSelectedSites([]);
       setSelectedProducts([]);
@@ -138,55 +199,61 @@ export default function AddRecordForm() {
     }
   };
 
-  return (
-    <div
-      style={{
-        backgroundColor: "#ffffff",
-        padding: "24px",
-        width: "100%",
-        minHeight: "100vh",
-        borderRadius: "0",
-        boxShadow: "none",
-        boxSizing: "border-box",
-      }}
-    >
-      <h2
-        style={{
-          fontSize: "18px",
-          fontWeight: "600",
-          marginBottom: "20px",
-          marginTop: "0",
-          color: "#333",
-        }}
-      >
-        Add Stock Record
-      </h2>
+  const isSubmitDisabled =
+    !employee ||
+    !dateCollected ||
+    !productsGivenBy.trim() ||
+    selectedSites.length === 0 ||
+    selectedProducts.length === 0 ||
+    selectedProducts.some((p) => p.quantity === "");
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
+  return (
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+      <Box
+        sx={{
+          backgroundColor: "#ffffff",
+          p: { xs: 2, sm: 3, md: 4 },
+          borderRadius: 2,
+          boxShadow: 1,
         }}
       >
-        {/* Employee ID and Name Row */}
-        <div
+        <h2
           style={{
-            display: "flex",
-            gap: "16px",
-            width: "100%",
+            fontSize: "clamp(20px, 4vw, 28px)",
+            fontWeight: "600",
+            marginBottom: "20px",
+            marginTop: "0",
+            color: "#333",
+            textAlign: isXs ? "center" : "left",
           }}
         >
-          {/* Employee ID */}
-          <div style={{ flex: 1 }}>
+          Add Stock Record
+        </h2>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: { xs: 2, sm: 2.5, md: 3 },
+          }}
+        >
+          {/* Employee Row */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: { xs: 2, sm: 2.5 },
+            }}
+          >
             <Autocomplete
               options={employees}
               getOptionLabel={(e) => e.employee_id}
               value={employee}
               isOptionEqualToValue={(option, value) =>
-                option.employee_id === value.employee_id
+                option.employee_id === value?.employee_id
               }
               onChange={(_, v) => setEmployee(v)}
+              sx={{ flex: 1 }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -196,56 +263,41 @@ export default function AddRecordForm() {
                 />
               )}
             />
-          </div>
-
-          {/* Employee Name */}
-          <div style={{ flex: 1 }}>
             <TextField
               label="Employee Name"
               value={employee?.name || ""}
               disabled
-              fullWidth
-              sx={textFieldSx}
+              sx={{ flex: 1, ...textFieldSx }}
             />
-          </div>
-        </div>
+          </Box>
 
-        {/* Date and Products Given By Row */}
-        <div
-          style={{
-            display: "flex",
-            gap: "16px",
-            width: "100%",
-          }}
-        >
-          {/* Date Collected */}
-          <div style={{ flex: 1 }}>
+          {/* Date and Products Given By Row */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: { xs: 2, sm: 2.5 },
+            }}
+          >
             <TextField
               type="date"
               label="Date Collected"
               value={dateCollected}
               onChange={(e) => setDateCollected(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              fullWidth
               required
-              sx={textFieldSx}
+              sx={{ flex: 1, ...textFieldSx }}
+              inputProps={{ max: new Date().toISOString().split("T")[0] }}
             />
-          </div>
-
-          {/* Products Given By */}
-          <div style={{ flex: 1 }}>
             <TextField
               label="Products Given By"
               value={productsGivenBy}
               onChange={(e) => setProductsGivenBy(e.target.value)}
-              fullWidth
-              sx={textFieldSx}
+              sx={{ flex: 1, ...textFieldSx }}
             />
-          </div>
-        </div>
+          </Box>
 
-        {/* Sites */}
-        <div>
+          {/* Sites */}
           <Autocomplete
             multiple
             disableCloseOnSelect
@@ -261,17 +313,18 @@ export default function AddRecordForm() {
                   <Chip
                     key={key}
                     label={option.name}
+                    size="small"
                     {...tagProps}
                     sx={{
                       backgroundColor: THEME_COLOR,
                       color: "#fff",
                       fontWeight: 500,
-
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
                       "& .MuiChip-deleteIcon": {
-                        color: "rgba(255, 255, 255, 0.85)", // visible but not harsh
+                        color: "rgba(255, 255, 255, 0.85)",
                       },
                       "& .MuiChip-deleteIcon:hover": {
-                        color: "#fff", // full white on hover
+                        color: "#fff",
                       },
                     }}
                   />
@@ -279,13 +332,16 @@ export default function AddRecordForm() {
               })
             }
             renderInput={(params) => (
-              <TextField {...params} label="Sites" sx={textFieldSx} />
+              <TextField
+                {...params}
+                label="Sites *"
+                required
+                sx={textFieldSx}
+              />
             )}
           />
-        </div>
 
-        {/* Products */}
-        <div>
+          {/* Products */}
           <Autocomplete
             multiple
             options={products}
@@ -300,11 +356,13 @@ export default function AddRecordForm() {
                   <Chip
                     key={key}
                     label={option.name}
+                    size="small"
                     {...tagProps}
                     sx={{
                       backgroundColor: THEME_COLOR,
                       color: "#fff",
                       fontWeight: 500,
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
                       "& .MuiChip-deleteIcon": {
                         color: "rgba(255,255,255,0.85)",
                       },
@@ -317,123 +375,90 @@ export default function AddRecordForm() {
               })
             }
             renderInput={(params) => (
-              <TextField {...params} label="Products" sx={textFieldSx} />
+              <TextField
+                {...params}
+                label="Products *"
+                required
+                sx={textFieldSx}
+              />
             )}
           />
-        </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "16px",
-          }}
-        >
-          {selectedProducts.map((p) => (
-            <div
-              key={p.id}
-              style={{
-                flex: "1 1 calc(25% - 16px)", // 4 per row
-                minWidth: "180px", // responsive safety
-              }}
-            >
-              <TextField
-                type="number"
-                label={`${p.name} Quantity`}
-                value={p.quantity}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  if (value < 1) return;
+          {/* Product Quantities */}
+          {selectedProducts.length > 0 && (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+              {selectedProducts.map((p) => (
+                <Box
+                  key={p.id}
+                  sx={{
+                    flexBasis: {
+                      xs: "100%",
+                      sm: "calc(50% - 8px)",
+                      md: "calc(25% - 12px)",
+                    },
+                    maxWidth: {
+                      xs: "100%",
+                      sm: "calc(50% - 8px)",
+                      md: "calc(25% - 12px)",
+                    },
+                  }}
+                >
+                  <TextField
+                    type="text"
+                    label={`${p.name} Quantity`}
+                    value={p.quantity === 0 ? "" : p.quantity}
+                    onChange={(e) => handleQuantityInput(e, p.id)}
+                    onKeyDown={handleKeyDown}
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "\\d*",
+                    }}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      ...textFieldSx,
+                      "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                        {
+                          display: "none",
+                        },
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          )}
 
-                  setSelectedProducts((prev) =>
-                    prev.map((x) =>
-                      x.id === p.id ? { ...x, quantity: value } : x,
-                    ),
-                  );
-                }}
-                inputProps={{
-                  min: 1,
-                  inputMode: "numeric",
-                  pattern: "[0-9]*",
-                }}
-                fullWidth
-                sx={{
-                  ...textFieldSx,
-                  "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                    { display: "none" },
-                  "& input[type=number]": {
-                    MozAppearance: "textfield",
-                  },
-                }}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Submit */}
-        <div>
-          <button
+          {/* Submit Button */}
+          <Box
+            component="button"
             onClick={handleSubmit}
-            disabled={
-              !employee ||
-              !dateCollected ||
-              !productsGivenBy.trim() ||
-              selectedSites.length === 0 ||
-              selectedProducts.length === 0
-            }
-            style={{
-              backgroundColor:
-                !employee ||
-                !dateCollected ||
-                !productsGivenBy.trim() ||
-                selectedSites.length === 0 ||
-                selectedProducts.length === 0
-                  ? "#cccccc"
-                  : "#1976d2",
+            disabled={isSubmitDisabled}
+            sx={{
+              backgroundColor: isSubmitDisabled
+                ? "#cccccc !important"
+                : "#1976d2 !important",
               color: "white",
               border: "none",
-              padding: "12px 24px",
-              borderRadius: "4px",
-              fontSize: "16px",
-              fontWeight: "500",
-              cursor:
-                !employee ||
-                !dateCollected ||
-                !productsGivenBy.trim() ||
-                selectedSites.length === 0 ||
-                selectedProducts.length === 0
-                  ? "not-allowed"
-                  : "pointer",
+              p: 2,
+              borderRadius: 1,
+              fontSize: "1rem",
+              fontWeight: 500,
+              cursor: isSubmitDisabled ? "not-allowed" : "pointer",
               width: "100%",
-              transition: "background-color 0.3s ease",
-            }}
-            onMouseOver={(e) => {
-              const isDisabled =
-                !employee ||
-                !dateCollected ||
-                !productsGivenBy.trim() ||
-                selectedSites.length === 0 ||
-                selectedProducts.length === 0;
-              if (!isDisabled) {
-                e.currentTarget.style.backgroundColor = "#1565c0";
-              }
-            }}
-            onMouseOut={(e) => {
-              const isDisabled =
-                !employee ||
-                !dateCollected ||
-                !productsGivenBy.trim() ||
-                selectedSites.length === 0 ||
-                selectedProducts.length === 0;
-              if (!isDisabled) {
-                e.currentTarget.style.backgroundColor = "#1976d2";
-              }
+              transition: "all 0.3s ease",
+              mt: 1,
+              "&:hover": {
+                backgroundColor: isSubmitDisabled
+                  ? "#cccccc !important"
+                  : "#1565c0 !important",
+              },
+              textTransform: "none",
             }}
           >
             Save Record
-          </button>
-        </div>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Container>
   );
 }
