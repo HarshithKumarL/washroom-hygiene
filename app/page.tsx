@@ -74,59 +74,107 @@ export default function HomePage() {
         }}
       >
         <Container maxWidth="lg">
-          <Typography
-            variant="h2"
+          <Box
             sx={{
-              fontWeight: 700,
-              fontSize: { xs: "2.2rem", md: "3.5rem" },
-              mb: 3,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 6,
+              flexDirection: { xs: "column", md: "row" }, // responsive
             }}
           >
-            Washroom Hygiene Stock Manager
-          </Typography>
-
-          <Typography
-            variant="h6"
-            sx={{
-              maxWidth: 800,
-              mx: "auto",
-              mb: 5,
-              opacity: 0.95,
-              fontWeight: 300,
-            }}
-          >
-            Professional inventory management for hygiene supplies across all
-            facilities.
-          </Typography>
-
-          <Box display="flex" justifyContent="center" gap={2} flexWrap="wrap">
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => router.push("/dashboard")}
+            {/* LEFT IMAGE */}
+            <Box
               sx={{
-                backgroundColor: "#fff",
-                color: BRAND_ORANGE,
-                px: 5,
-                borderRadius: "50px",
-                fontWeight: 600,
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
               }}
             >
-              Go to Dashboard
-            </Button>
+              <Box
+                component="img"
+                src="/WHC_dp.png" // 👈 place image in /public/images
+                alt="Washroom hygiene inventory"
+                sx={{
+                  width: "100%",
+                  maxWidth: 480,
+                }}
+              />
+            </Box>
 
-            <Button
-              variant="outlined"
-              size="large"
+            {/* RIGHT CONTENT */}
+            <Box
               sx={{
-                borderColor: "#fff",
-                color: "#fff",
-                px: 5,
-                borderRadius: "50px",
+                flex: 1,
+                textAlign: { xs: "center", md: "left" },
               }}
             >
-              Learn More
-            </Button>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: "2.2rem", md: "3.5rem" },
+                  mb: 3,
+                }}
+              >
+                Washroom Hygiene Inventory
+              </Typography>
+
+              <Typography
+                variant="h6"
+                sx={{
+                  maxWidth: 520,
+                  mb: 5,
+                  opacity: 0.95,
+                  fontWeight: 300,
+                  mx: { xs: "auto", md: 0 },
+                }}
+              >
+                Professional inventory management for hygiene supplies across
+                all facilities.
+              </Typography>
+
+              <Box
+                display="flex"
+                gap={2}
+                justifyContent={{ xs: "center", md: "flex-start" }}
+                flexWrap="wrap"
+              >
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => router.push("/dashboard")}
+                  sx={{
+                    backgroundColor: "#fff",
+                    color: BRAND_ORANGE,
+                    px: 5,
+                    borderRadius: "50px",
+                    fontWeight: 600,
+                    "&:hover": {
+                      backgroundColor: "#f5f5f5",
+                    },
+                  }}
+                >
+                  Go to Dashboard
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  size="large"
+                  sx={{
+                    borderColor: "#fff",
+                    color: "#fff",
+                    px: 5,
+                    borderRadius: "50px",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                    },
+                  }}
+                >
+                  Learn More
+                </Button>
+              </Box>
+            </Box>
           </Box>
         </Container>
       </Box>
@@ -251,7 +299,7 @@ export default function HomePage() {
       {/* FOOTER */}
       <Box sx={{ backgroundColor: DARK_TEXT, py: 4 }}>
         <Typography textAlign="center" sx={{ color: "#fff", opacity: 0.8 }}>
-          © {new Date().getFullYear()} Washroom Hygiene Stock Manager
+          © {new Date().getFullYear()} Washroom Hygiene Inventory
         </Typography>
       </Box>
     </Box>

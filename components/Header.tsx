@@ -34,6 +34,7 @@ export default function Header() {
             flex: "1 1 auto",
             minWidth: "0",
           }}
+          onClick={() => (window.location.href = "/")}
         >
           <Image src="/WHC_dp.png" alt="Logo" width={50} height={50} priority />
           <h1
